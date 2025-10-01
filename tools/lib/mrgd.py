@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 #
-# Author: ddny, root-none
+# Author: ddny, root-none, Lisen
 '''mrgd00 lib'''
 
 DEFAULT_SECTOR_SIZE = 0x800
@@ -38,10 +38,13 @@ class ArchiveInfo:
         # set file data real size
         self.size_sectors = size_sector_upper_boundary
         self.size_low = size
+
         if not with_hed and\
             self.size_low<((self.size_sectors-1)*DEFAULT_SECTOR_SIZE)\
                 and (self.size_low+self.byte_offset)>((self.size_sectors-1)*DEFAULT_SECTOR_SIZE):
+            # fix sector count for single mrg
             self.size_sectors -= 1
+
         if with_hed and self.size_low == 0:
             self.real_size = self.size_sectors * DEFAULT_SECTOR_SIZE
         else:
@@ -61,7 +64,7 @@ class VoiceInfo:
         # self.real_size = DEFAULT_SECTOR_SIZE * (((offset_size_high & 0x0F00)<<8)|(offset_size_high & 0x00FF))
 
 
-# Author: Lisen, root-none
+# Author: Lisen, root-none, base hedutil.HedEntry.to_block
 def calculate_entry_desc(current_offset, data_size, is_combine, is_voice=None):
     sector_size = DEFAULT_SECTOR_SIZE
     if is_combine:

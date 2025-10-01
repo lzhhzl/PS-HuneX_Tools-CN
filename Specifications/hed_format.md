@@ -21,7 +21,7 @@ These containers typically contain the following file types:
 
 - *.MRG, *.MZP ('mrgd00')
 > generic container, group of files or texts or pictures(described in ``mzp_format.md``).
-> For MRG, it's divided into single .mrg and split .hed/.mrg files.
+> For MRG, it's divided into single .mrg and split .hed & .mrg files.
 
 - *.HED, *.NAM
 > generic entry and files name Descriptor, but not all mrg file come with nam file, maybe because the engine doesn't need file names to seek files.
@@ -52,7 +52,7 @@ A series of sixteen 0xFF bytes marks EOF.
  I.1)  Generic Entry Descriptor (allpac)
 -----------------------------------------
 
-> For single .mrg file, entry desc-block start at 0x8 (Same as .mzp):
+> For single .mrg file, entry description block start at 0x8 (Same as .mzp):
 
 	2 bytes - offset, sector count (0x800 bytes)
 	2 bytes - offset, within sector
@@ -62,7 +62,7 @@ A series of sixteen 0xFF bytes marks EOF.
 Single .mrg file's Entry offset and Entry size, see the Real offset and the Real size described in ``mzp_format.md``.
 
 > For split .mrg file, it has no magic and entries num in head-part.
-> The entry desc-block store in .hed file with same basename.
+> The entry description block store in .hed file with same mrg basename.
 
 	2 bytes - offset, low Word
 	2 bytes - offset, high Word

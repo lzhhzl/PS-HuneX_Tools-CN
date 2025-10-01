@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 #
-# Author: ddny(denyu), root-none, Lisen(?)
+# Author: ddn_y(denyu), root-none, Lisen(SpriteLisen)
 # Base on Hintay <hintay@me.com>, Nanashi3 and Quibi etc. work
 #
 # MRG(header mrgd00) files extraction & creation utility
-# For more information, see Specifications/mrgd00_format.md
+# For more information, see Specifications/hed_format.md
 """
 mrg_util —— rewrite base on hedutil and unpack_allsrc.
 
@@ -25,7 +25,7 @@ from lib.mrgd import ArchiveInfo, VoiceInfo
 from lib.mrgd import calculate_entry_desc, add_entry_padding
 import filename_utils
 
-MODE = 'fateSN'  # specific game mode for diffrent processing
+MODE = ''  # specific game mode for diffrent processing
 
 """MRG struct{
     (optional) char magic[6];  // mrgd00
@@ -47,6 +47,17 @@ class CustHelpAction(argparse._HelpAction):  # show subcommand help
                     print("\n\n== {} ==".format(choice))
                     print(subparser.format_help())
         parser.exit()
+
+
+def get_nam_pattern(nam_file_name):
+    if nam_file_name.find('voice') >= 0:
+        if MODE == 'fateSN':
+            # Fate Stay Night Realta Nua
+            return 0x8
+        elif MODE == 'aiyokuEus':
+            # Aiyoku no Eustia
+            return 0x10
+    return 0x20
 
 
 # Author: root-none, rewrite base hedutil.NamUtil
@@ -71,7 +82,7 @@ def extract_filenames(nam_filename, nam_data, fix=False):
             file_name = name_bytes.decode('cp932')
             namelist.append(file_name)
     else:
-        nam_length = 8 if nam_filename.find('voice') >= 0 else 32
+        nam_length = get_nam_pattern(nam_filename)
         names_count = len(nam_data) // nam_length
         for i in range(names_count):
             file_name = filename_utils.fix_file_name(i, MODE) if fix else ""
@@ -80,7 +91,7 @@ def extract_filenames(nam_filename, nam_data, fix=False):
             if name_bytes.find(b'\x00')>=0:
                 name_bytes = name_bytes[:name_bytes.index(b'\x00')]
             if i+1!=names_count and name_bytes==b"":
-                print(f"Debug: have empty name bytes {i}")
+                print(f"Debug: have empty name bytes(index:{i}) in nam file")
             try:
                 file_name += name_bytes.decode('cp932')
             except UnicodeDecodeError:
@@ -138,7 +149,6 @@ def unpack(args):
         entry_data_file = mrg_file
     print(f"MRG {mrg_name} Archive count: {entries_num} entries")
     
-    print(f'Output Directory: {output_path}')
     entries_desc = []
     indexed_fmt = '{0:04d}' if entries_num < 10000 else '{0:06d}'
     # read data in mrg file
@@ -166,7 +176,8 @@ def unpack(args):
         mrg_file.seek(entry_info.real_offset, 0)
         file_data = mrg_file.read(entry_info.real_size)
 
-        # debug padding, can verified unpack file real size
+        # debug padding part
+        # can also check and verify output file true size in here
         if has_hed:
             sec_data_size = entry_info.real_size if mrg_name.startswith('voice') else entry_info.size_sectors*0x800
             pad_num = sec_data_size - entry_info.real_size
@@ -186,8 +197,8 @@ def unpack(args):
 
         # generate file name
         if mrg_name.lower()=='allscr' and i==0:
-            # TODO: besides script, other game allscr may have unknowns/specific files at the beginning
-            if MODE=='fateSN':  # fate stay night realta nua
+            # TODO: besides script, other game allscr may have unknown/specific files at the beginning
+            if MODE=='fateSN':  # Fate Stay Night Realta Nua
                 filename_list = ['allscr.nam', 'unknown_table.mrg', 'unknown1']
                 filename_list += extract_filenames('allscr.nam', file_data, True)
             else:
@@ -213,6 +224,7 @@ def unpack(args):
         f.write('\n'.join(filename_list))
 
     mrg_file.close()
+    print(f'Output Directory: {output_path}')
 
 
 def repack(args):
@@ -226,11 +238,11 @@ def repack(args):
     mrg_name = mrg_output_path.stem
 
     # read filename list
-    print('Loaded Filelist')
     file_list_path = files_path.joinpath(f'filename_{mrg_name}.list')
     assert file_list_path.exists(), f'{file_list_path.name} does not found in {files_path}. Please make sure the path to the folder contains filename list.'
     with open(file_list_path, 'r', encoding="utf-8") as f:
         filename_list = [line.rstrip('\n') for line in f.readlines()]
+    print('Loaded Filelist')
     
     # pack files
     hed_buf = b''
@@ -269,6 +281,7 @@ def repack(args):
         hed_output_path = mrg_output_path.with_name(f'new_{mrg_output_path.stem}.hed')
         with hed_output_path.open('wb') as f:
             f.write(hed_buf)
+        print(f'save as {hed_output_path.absolute()}')
     else:
         # add magic and entries num for single mrg
         pack_buf = b'\x6D\x72\x67\x64\x30\x30' + struct.pack('<H', len(filename_list)) + hed_buf + pack_buf
@@ -277,6 +290,8 @@ def repack(args):
     mrg_output_path = mrg_output_path.with_name(f'new_{mrg_output_path.name}')
     with mrg_output_path.open('wb') as f:
         f.write(pack_buf)
+    print(f'save as {mrg_output_path.absolute()}')
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__, add_help=False)
@@ -287,7 +302,7 @@ def parse_args():
     parser_unpack.add_argument('input', metavar='input.mrg', help='Input .mrg file')
 
     # repack
-    parser_repack = subparsers.add_parser('repack', help='generate a new .mrg from an existing MRG filelist')
+    parser_repack = subparsers.add_parser('repack', help='generate a new .mrg base an existing MRG filelist')
     parser_repack.add_argument('-s', '--source_files',
                                required=True, dest='source_path',
                                help='Files path to repack, that also contain filename_xxx.list [REQUIRED]')

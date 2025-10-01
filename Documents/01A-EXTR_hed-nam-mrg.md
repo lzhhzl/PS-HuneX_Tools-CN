@@ -1,9 +1,10 @@
- allpac.hed/.nam/.mrg Extraction
+ *.mrg/.hed/.nam Extraction
 =================================
 
  Used Tools
 ------------
-- `hedutil.py` [in-house dev / Python 3]
+- `mrg_util.py` [in-house dev / Python 3 / New-Develop]
+- `hedutil.py` [in-house dev / Python 3 / Prototype]
 
 
  About
@@ -14,18 +15,22 @@
 These containers typically contain the following file types:
 
 - *.MRG, *.MZP ('mrgd00')
-> generic container, group of pictures
+> generic container, group of files or texts or pictures
 
 - *.MZX ('MZX0')
 > Compressed data stream.
 
-- *.ahx, *.at3
-> CRI Middleware MPEG-2 audio file or ATRAC3-in-RIFF  audio file
+- *.ahx, *.at3, *.at9
+> CRI Middleware MPEG-2 audio file or ATRAC3-in-RIFF/ATRAC9-in-RIFF audio file
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
  Command
 -----------
+	python mrg_util.py unpack allpac.mrg
+
+or
+
 	python hedutil.py unpack --filelist allpac.list allpac.hed
 
 
@@ -37,21 +42,30 @@ These containers typically contain the following file types:
 2. allpac.nam (optional)
 3. allpac.mrg
 
+or
+
+1. allscr.mrg
+
 ***When repacking***:
 
-1. allpac.list + files referenced inside
+1. filename_allpac.list + files referenced inside (mrg_util)
+
+or
+
+1. allpac.list + files referenced inside (hedutil)
 
 
  Product(s)
 -----------
 ***When unpacking***:
 
-* items in subfolder (``allpac-unpacked``)
-* Ordered file list (``allpac.list``)
+* items in subfolder (Example: ``allpac_unpack`` / ``allpac-unpacked``)
+* Ordered file list (Example: ``filename_allpac.list`` / ``allpac.list``)
 
 ***When repacking***:
 
-* HED/NAM/MRG treble (``newpac.hed``, etc.) 
+* *mrg_util* —— HED/MRG double (``new_allpac.hed`` and ``new_allpac.mrg``, or single ``new_allscr.mrg`` etc.) 
+* _hedutil_ —— HED/NAM/MRG treble (``newpac.hed``, etc.) 
 
 
 

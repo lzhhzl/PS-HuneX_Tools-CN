@@ -3,6 +3,7 @@
 
  Used Tools
 ------------
+- `mzx_util.py` [in-house dev / Python 3 / New-Develop]
 - `mzx/decomp_mzx0.py` [in-house dev / Python 3]
 - `prep_tpl.py` [in-house dev / Python 3]
 
@@ -12,13 +13,15 @@
 allpac.mrg, extracted using `hedutil`, contains *.MZX files, which are compressed files with an 'MZX0' sig.
 
 An .MZX file is not necessarily a game script, it is a compressed stream similar to gzip.
-On the other hand, all *.MZX files in allpac.mrg are likely to be game scripts.
+On the other hand, all *.MZX files in allpac.mrg are likely to be game scripts. And the \*.MZX files in voice\*.mrg with b"LV\x03\x00\x00\x09\x00" head are likely to be ATRAC stream.
 
 `prep_tpl` decompresses and preprocesses scripts into a format better suited for editing.
 
 
 Extraction
 -----------
+
+For `_prep_tpl.py`:
 
 1. This assumes allpac.hed/mrg was extracted into `base_directory/allpac-unpacked/`
 2. Create a folder as such: `"base_directory/1.prep_mzx_to_tpl"` and place a copy of script extraction tools into it.
@@ -27,10 +30,20 @@ Extraction
 
  Command
 -----------
+
+For `_prep_tpl.py`:
+
 	python _prep_tpl.py ../allpac-unpacked
 -or-
 
 	python _prep_tpl.py ../allpac-unpacked/<scriptname.MZX>
+
+For `mzx_util.py`:
+
+	python mzx_util.py ./dir_contain_mzx_files
+-or-
+
+	python mzx_util.py ./dir_contain_mzx_files/<name.MZX\mzx>
 
  Source(s)
 -----------
