@@ -90,8 +90,10 @@ def extract_filenames(nam_filename, nam_data, fix=False):
             name_bytes = name_bytes.replace(b'\x01', b'')
             if name_bytes.find(b'\x00')>=0:
                 name_bytes = name_bytes[:name_bytes.index(b'\x00')]
-            if i+1!=names_count and name_bytes==b"":
-                print(f"Debug: have empty name bytes(index:{i}) in nam file")
+            if name_bytes==b"":
+                if i+1!=names_count:
+                    print(f"Debug: have empty name bytes(index:{i}) in nam file")
+                continue  # last one might be padding
             try:
                 file_name += name_bytes.decode('cp932')
             except UnicodeDecodeError:
@@ -115,6 +117,11 @@ def unpack(args):
     except FileExistsError:
         print(f"Output directory \'{output_path.resolve()}\' already exists. You should delete it first.")
         return
+    
+    # set game mode if specific
+    if args.mode:
+        global MODE
+        MODE = args.mode 
 
     # read filenames in .nam file(if exists)
     filename_list = []
@@ -198,11 +205,13 @@ def unpack(args):
         # generate file name
         if mrg_name.lower()=='allscr' and i==0:
             # TODO: besides script, other game allscr may have unknown/specific files at the beginning
-            if MODE=='fateSN':  # Fate Stay Night Realta Nua
-                filename_list = ['allscr.nam', 'unknown_table.mrg', 'unknown1']
+            if MODE in ['fateSN', 'fateHA', 'mahoyo']:
+                # Fate Stay Night Realta Nua and Fate Hollow Ataraxia
+                # and Mahoutsukai no Yoru
+                filename_list = ['scr.nam', 'scr_adr.mrg', 'unknown']
                 filename_list += extract_filenames('allscr.nam', file_data, True)
             else:
-                filename_list = ['unknown_table.mrg']
+                filename_list = ['scr_adr.mrg']
         if len(filename_list)>i:
             file_name = filename_list[i]
             file_name = filename_utils.add_suffix(file_name, file_data, output_path, indexed_fmt.format(i))
@@ -230,7 +239,7 @@ def unpack(args):
 def repack(args):
     # repack files path
     files_path = Path(args.source_path)
-    has_hed = not args.is_combine
+    has_hed = not args.combine
     assert files_path.exists(), f'{files_path} does not found. Please pass the path to the folder contains repack files.'
 
     # set output path
@@ -253,7 +262,7 @@ def repack(args):
             pack_data = f.read()
         data_offset, data_size = temp_buf.tell(), len(pack_data)
         # add padding
-        pad_len, pad_data = add_entry_padding(args.is_combine, len(pack_data))
+        pad_len, pad_data = add_entry_padding(args.combine, len(pack_data))
         if has_hed:
             if mrg_name.startswith('voice'):
                 offset_low, offset_size_high = calculate_entry_desc(data_offset, data_size+pad_len,
@@ -300,15 +309,16 @@ def parse_args():
     # unpack
     parser_unpack = subparsers.add_parser('unpack', help='unpack mrg and create a filelist')
     parser_unpack.add_argument('input', metavar='input.mrg', help='Input .mrg file')
+    parser_unpack.add_argument('-m', '--mode', metavar='game_mode',
+                               help='Set game mode to specify different unpack action.')
 
     # repack
     parser_repack = subparsers.add_parser('repack', help='generate a new .mrg base an existing MRG filelist')
     parser_repack.add_argument('-s', '--source_files',
                                required=True, dest='source_path',
                                help='Files path to repack, that also contain filename_xxx.list [REQUIRED]')
-    parser_repack.add_argument('-c', '--combine',
-                               dest='is_combine', type=int,
-                               help='Decide whether to generate .hed file. Default 0(False)')
+    parser_repack.add_argument('-c', '--combine', action="store_true",
+                               default=False, help='Decide whether to generate .hed file. Default False')
     parser_repack.add_argument('output', metavar='output.mrg',
                                help='Output .mrg file. Same basename is used for .hed/.nam when needed')
 

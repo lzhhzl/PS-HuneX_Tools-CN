@@ -49,7 +49,6 @@ def fix_file_name(index, mode):
     # Those patten can usually be finded in allpac-SCR.NAM
     # You might need to fix some names in case overwriting same file name
     if mode == 'fateSN':
-        index -= 3
         if 101 <= index <= 202:
             return 'セイバールート十'
         elif index == 240:

@@ -35,7 +35,7 @@ def decompress(args):
         with file_path.open('rb') as data:
             head_part = data.read(7)
             offset = 7 if(head_part == b'LV\x03\x00\x00\t\x00') else 0
-            mzx_name += '.raw_scr' if(head_part != b'LV\x03\x00\x00\t\x00') else ''
+            mzx_name += '.scr' if(head_part != b'LV\x03\x00\x00\t\x00') else ''
             data.seek(offset)
             _magic, dec_size = struct.unpack('<LL', data.read(0x8))
             datablock_size = file_path.stat().st_size - offset - 8

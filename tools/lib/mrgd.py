@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 #
-# Author: ddny, root-none, Lisen
+# Author: ddn_y, root-none, Lisen
 '''mrgd00 lib'''
 
 DEFAULT_SECTOR_SIZE = 0x800

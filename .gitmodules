@@ -1,0 +1,3 @@
+[submodule "tools/localization_tool/VitaScenariosTool-Fate"]
+	path = tools/localization_tool/VitaScenariosTool-Fate
+	url = https://github.com/lzhhzl/VitaScenariosTool-Fate.git
