@@ -3,7 +3,7 @@
 
  Used Tools
 ------------
-- `mrg_util.py` [in-house dev / Python 3 / New-Develop]
+- `mrg_tool.py` [in-house dev / Python 3 / New-Develop]
 - `hedutil.py` [in-house dev / Python 3 / Prototype]
 
 
@@ -27,7 +27,7 @@ These containers typically contain the following file types:
 
  Command
 -----------
-	python mrg_util.py unpack allpac.mrg
+	python mrg_tool.py unpack allpac.mrg
 
 or
 
@@ -48,7 +48,7 @@ or
 
 ***When repacking***:
 
-1. filename_allpac.list + files referenced inside (mrg_util)
+1. filename_allpac.list + files referenced inside (mrg_tool)
 
 or
 
@@ -64,7 +64,7 @@ or
 
 ***When repacking***:
 
-* *mrg_util* —— HED/MRG double (``new_allpac.hed`` and ``new_allpac.mrg``, or single ``new_allscr.mrg`` etc.) 
+* *mrg_tool* —— HED/MRG double (``new_allpac.hed`` and ``new_allpac.mrg``, or single ``new_allscr.mrg`` etc.) 
 * _hedutil_ —— HED/NAM/MRG treble (``newpac.hed``, etc.) 
 
 

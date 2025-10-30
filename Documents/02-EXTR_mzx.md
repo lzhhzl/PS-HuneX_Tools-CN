@@ -3,7 +3,7 @@
 
  Used Tools
 ------------
-- `mzx_util.py` [in-house dev / Python 3 / New-Develop]
+- `mzx_tool.py` [in-house dev / Python 3 / New-Develop]
 - `mzx/decomp_mzx0.py` [in-house dev / Python 3]
 - `prep_tpl.py` [in-house dev / Python 3]
 
@@ -38,12 +38,12 @@ For `_prep_tpl.py`:
 
 	python _prep_tpl.py ../allpac-unpacked/<scriptname.MZX>
 
-For `mzx_util.py`:
+For `mzx_tool.py`:
 
-	python mzx_util.py ./dir_contain_mzx_files
+	python mzx_tool.py ./dir_contain_mzx_files
 -or-
 
-	python mzx_util.py ./dir_contain_mzx_files/<name.MZX\mzx>
+	python mzx_tool.py ./dir_contain_mzx_files/<name.MZX\mzx>
 
  Source(s)
 -----------

@@ -6,7 +6,7 @@
 Decompress one or several MZX files
 or Compress one or several files as MZX
 
-mzx_util comes with ABSOLUTELY NO WARRANTY.
+mzx_tool comes with ABSOLUTELY NO WARRANTY.
 """
 
 import os

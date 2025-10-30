@@ -7,11 +7,11 @@
 # MRG(header mrgd00) files extraction & creation utility
 # For more information, see Specifications/hed_format.md
 """
-mrg_util —— rewrite base on hedutil and unpack_allsrc.
+mrg_tool —— rewrite base on hedutil and unpack_allsrc.
 
 Script to unpack or repack a .hed/.nam/.mrg triple
 
-mrg_util comes with ABSOLUTELY NO WARRANTY.
+mrg_tool comes with ABSOLUTELY NO WARRANTY.
 """
 
 import argparse
