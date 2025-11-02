@@ -103,6 +103,12 @@ def decode_scr_bin(args):
     print(f'Done Decode.\nAll decoded scr save in {decode_scr_path.absolute()}.\nAll decoded text save in {decode_text_path.absolute()}.')
 
 
+def restore_surrogate_char(text):
+    return re.sub(r'_u\[([0-9a-f]{2})\]',
+                  lambda m: chr(0xDC00 + int(m.group(1),16)),
+                  text)
+
+
 def load_translations(csv_reader, char_map_code_dict, encode_lang='jp'):
     translations_dict = {}
     for row in csv_reader:
@@ -110,12 +116,8 @@ def load_translations(csv_reader, char_map_code_dict, encode_lang='jp'):
         line_offset, src, tran = row[0], row[1], row[2]
 
         # restore special byte
-        src = re.sub(r'_u\[([0-9a-f]{2})\]',
-                     lambda m: chr(0xDC00 + int(m.group(1),16)),
-                     src)
-        tran = re.sub(r'_u\[([0-9a-f]{2})\]',
-                     lambda m: chr(0xDC00 + int(m.group(1),16)),
-                     tran)
+        src = restore_surrogate_char(src)
+        tran = restore_surrogate_char(tran)
 
         if tran == '': tran = src  # not translated
         # replace some char in non-english lang
@@ -129,7 +131,29 @@ def load_translations(csv_reader, char_map_code_dict, encode_lang='jp'):
     return translations_dict
 
 
-def encode_csv_to_scr(args):
+def get_scr_tag(raw_buf: bytes):
+    content = raw_buf.decode('cp932')
+    matchs = re.search(r"_ZZ([0-9a-f]{5})\(([^)]*)(?:\)|$)",content)
+    return matchs.group(1)[:3], matchs.group(2).rstrip('/')
+
+
+def output_encode_scr(output_path, file, scr_lines):
+    scr_adr = []
+    # save encode scr
+    with output_path.joinpath(file.stem+'.scr').open('wb') as f:
+        assert scr_lines[-1]==b''
+        for line_buf in scr_lines[:-1]:
+            if line_buf.startswith(b'_ZZ'):
+                block_i, tag = get_scr_tag(line_buf)
+                if tag:
+                    scr_adr.append(tag+chr(0x20)*(21-len(tag))+f"{block_i},{f.tell():05x}\r\n")
+            f.write(line_buf+b';')
+    # save scr adr
+    with output_path.joinpath("scr_adr",file.stem+'.adr').open('wb') as f:
+        f.write(''.join(scr_adr).encode('utf-8'))
+
+
+def import_csv_to_scr(args):
     # csv file(s) contains translations text
     input_path = Path(args.input)
     assert input_path.exists()
@@ -140,8 +164,9 @@ def encode_csv_to_scr(args):
         output_path = Path(args.output)
     else:
         output_path = (input_path.parent if input_path.is_file() else input_path).parent
-        output_path = output_path.joinpath("encoded_script")
+        output_path = output_path.joinpath("translated_script")
     output_path.mkdir(parents=True, exist_ok=True)
+    output_path.joinpath('scr_adr').mkdir(parents=True, exist_ok=True)
     # read characters code mapping table
     if args.tbl_path:
         tbl_type = 'json' if args.tbl_path.endswith('.json') else 'tbl'
@@ -154,7 +179,7 @@ def encode_csv_to_scr(args):
 
     translate_files = filename_utils.file_or_folder(input_path, '*.csv')
     for csv_file in translate_files:
-        print(f"Encoding {csv_file.stem}")
+        print(f"Import translation in {csv_file.stem}")
 
         # load translations with char-mapping-table
         with csv_file.open('r', encoding='utf-8-sig') as f:
@@ -170,11 +195,37 @@ def encode_csv_to_scr(args):
             assert orig_bytes.index(tran_set[0])>=0
             tran_bytes = orig_bytes.replace(tran_set[0], tran_set[1])
             scr_lines[line_i] = tran_bytes
+        output_encode_scr(output_path, csv_file, scr_lines)
+
+    print(f'Done Import.\nAll new encode scr files save in {output_path.absolute()}.')
+
+
+def encode_txt_to_scr(args):
+    input_path = Path(args.input)
+    assert input_path.exists()
+    # output encoded scr(s)
+    if args.output:
+        output_path = Path(args.output)
+    else:
+        output_path = (input_path.parent if input_path.is_file() else input_path).parent
+        output_path = output_path.joinpath("encoded_script")
+    output_path.mkdir(parents=True, exist_ok=True)
+    output_path.joinpath('scr_adr').mkdir(parents=True, exist_ok=True)
+
+    txt_files = filename_utils.file_or_folder(input_path, '*.txt')
+    txt_encode = 'utf-8' if args.unicode else 'cp932'
+    for txt_file in txt_files:
+        print(f"Encoding {txt_file.stem}")
+        with txt_file.open('r',encoding=txt_encode) as f:
+            lines = f.read().split('\n')
         
-        # save encode scr
-        with output_path.joinpath(csv_file.stem+'.scr').open('wb') as f:
-            assert scr_lines[-1]==b''
-            f.write(b';'.join(scr_lines))
+        scr_lines = []
+        for content in lines:
+            content = restore_surrogate_char(content)
+            content = content.replace(';/',',')
+            scr_lines.append(content.encode('cp932', errors='surrogateescape'))
+        output_encode_scr(output_path, txt_file, scr_lines)
+
     print(f'Done Encode.\nAll new encode scr files save in {output_path.absolute()}.')
 
 
@@ -191,14 +242,20 @@ def parse_args():
     parser_decode.add_argument('-v', '--verbose', action="store_true",
                                default=False, help='output csv will has some debug parts.')
 
-    parser_encode = subparsers.add_parser('encode', help='Encode translation csv files to scr.')
-    parser_encode.add_argument('input', metavar='input_path', help='Input *.csv file or folder.')
-    parser_encode.add_argument('-s', '--scr_path', required=True,
+    parser_import = subparsers.add_parser('import', help='Import translations in csv files to scr.')
+    parser_import.add_argument('input', metavar='input_path', help='Input *.csv file or folder.')
+    parser_import.add_argument('-s', '--scr_path', required=True,
                                metavar='source_scripts_path', help='Origin scr files path to encode.')
-    parser_encode.add_argument('-o', '--output', required=False, metavar='output_path', help='Output folder.')
-    parser_encode.add_argument('-t', '--tbl_path', required=False,
+    parser_import.add_argument('-o', '--output', required=False, metavar='output_path', help='Output folder.')
+    parser_import.add_argument('-t', '--tbl_path', required=False,
                                metavar='font_code_tbl', help='(Option)Scr font code map table for encoding.')
-    parser_encode.add_argument('-l', '--lang', required=False, default='jp', help='(Option)Encoding text language. Default jp.')
+    parser_import.add_argument('-l', '--lang', required=False, default='jp', help='(Option)Encoding text language. Default \'jp\'.')
+
+    parser_encode = subparsers.add_parser('encode', help='Encode txt files to scr.')
+    parser_encode.add_argument('input', metavar='input_path', help='Input *.txt file or folder.')
+    parser_encode.add_argument('-o', '--output', required=False, metavar='output_path', help='Output folder.')
+    parser_encode.add_argument('-u', '--unicode', action="store_true",
+                               default=False, help='Set to read txt in utf-8 encode.')
 
     return parser, parser.parse_args()
 
@@ -207,8 +264,10 @@ if __name__ == '__main__':
     parser, args = parse_args()
     if args.subcommand == "decode":
         decode_scr_bin(args)
+    elif args.subcommand == "import":
+        import_csv_to_scr(args)
     elif args.subcommand == "encode":
-        encode_csv_to_scr(args)
+        encode_txt_to_scr(args)
     else:
         parser.print_usage()
         sys.exit(20)

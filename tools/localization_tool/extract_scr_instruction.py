@@ -21,17 +21,17 @@ param_index_pattern = r'`\d{3}'
 
 scr_dir = Path(scr_path)
 assert scr_dir.is_dir(), "need the directory path contain scr files"
-raw_scr_list = scr_dir.glob(scr_ext)
+scr_list = scr_dir.glob(scr_ext)
 text_instruction_list = []
 other_instruction_list = []
 param_index_list = []
-for scr_path in raw_scr_list:
+for scr_path in scr_list:
     with scr_path.open("rb") as f:
         raw_data = f.read()
     assert raw_data.split(b';')[-1]==b""
     for buf in raw_data.split(b';')[:-1]:
         decode_text = buf.decode('cp932', errors='surrogateescape')
-        instruction_text = decode_text[:decode_text.index('(')]
+        instruction_text = decode_text[:(decode_text.index('(') if '(' in decode_text else decode_text.index(')'))]
         match_result1 = re.search(rf'{"|".join(match_command)}', instruction_text)
         if match_command and match_result1 is not None:
             continue

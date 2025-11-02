@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# MZX Compress Library
+#
+# FOR INTERNAL USE ONLY.
+#
+# Copyright (c) 2018 <hintay@me.com>
+
 from struct import unpack, pack
 
 

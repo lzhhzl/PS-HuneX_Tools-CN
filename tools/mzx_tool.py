@@ -15,7 +15,8 @@ import argparse
 import struct
 import shutil
 from pathlib import Path
-from lib.mzx import mzx0_decompress, mzx0_compress
+from mzx.decomp_mzx0 import mzx0_decompress
+from mzx.comp_mzx0 import mzx0_compress
 import filename_utils
 
 
@@ -26,18 +27,24 @@ def decompress(args):
     output_path = None
 
     for file_path in folder_path:
+        if file_path.is_dir(): continue
         if not output_path:
             output_path = file_path.parent
-            output_dir = f'{output_path.stem.replace("_compress","")}_decompress'
-            output_path = output_path.with_name(output_dir)
+            if str(output_path.absolute())==os.path.dirname(__file__):
+                output_path = output_path.joinpath("mzx_decompress")
+            else:
+                output_dir = f'{output_path.stem.replace("_compress","")}_decompress'
+                output_path = output_path.with_name(output_dir)
             os.makedirs(output_path, exist_ok=True)
         mzx_name = file_path.stem
         with file_path.open('rb') as data:
             head_part = data.read(7)
             offset = 7 if(head_part == b'LV\x03\x00\x00\t\x00') else 0
-            mzx_name += '.scr' if(head_part != b'LV\x03\x00\x00\t\x00') else ''
+            if (head_part != b'LV\x03\x00\x00\t\x00'):
+                mzx_name += f'.{args.ext}'
             data.seek(offset)
-            _magic, dec_size = struct.unpack('<LL', data.read(0x8))
+            magic, dec_size = struct.unpack('<4sL', data.read(0x8))
+            assert magic==b"\x4D\x5A\x58\x30", f"This file might not be MZX file, magic: {magic}"
             datablock_size = file_path.stat().st_size - offset - 8
             status, dec_buf = mzx0_decompress(data, datablock_size, dec_size, xor_flag)
             if status != "OK":
@@ -52,15 +59,19 @@ def decompress(args):
 
 def compress(args):
     input_path = Path(args.input)
-    xor_flag = args.is_xor
+    xor_flag = args.is_xor if args.is_xor is not None else 1
     folder_path = filename_utils.file_or_folder(input_path, '*')
     output_path = None
 
     for file_path in folder_path:
+        if file_path.is_dir(): continue
         if not output_path:
             output_path = file_path.parent
-            output_dir = f'{output_path.stem.replace("_decompress","")}_compress'
-            output_path = output_path.with_name(output_dir)
+            if str(output_path.absolute())==os.path.dirname(__file__):
+                output_path = output_path.joinpath("mzx_compress")
+            else:
+                output_dir = f'{output_path.stem.replace("_decompress","")}_compress'
+                output_path = output_path.with_name(output_dir)
             os.makedirs(output_path, exist_ok=True)
         out_name = file_path.stem + '.mzx'
         with file_path.open('rb') as data:
@@ -84,6 +95,9 @@ def parse_args():
     parser_decompress.add_argument('-x', '--xor',
                                    dest='is_xor', type=int,
                                    help='Decompress with(1) or without(0) xorff')
+    parser_decompress.add_argument('-e', '--ext',
+                                   default='scr', type=str,
+                                   help="Output file extension. Default \'scr\'(for file in allscr).")
     parser_decompress.add_argument('input', metavar='input_path', help='Input mzx file or folder.')
 
     # compress

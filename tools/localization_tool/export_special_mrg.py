@@ -15,6 +15,7 @@ import json
 import argparse
 import struct
 
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from lib.mrgd import ArchiveInfo
 
 
@@ -56,8 +57,21 @@ def script_text_export(mrg_file, entries_desc, output_dir):
 def scr_adr_export(mrg_file, entries_desc, output_dir, scr_names_path):
     entries_num = len(entries_desc)
     if scr_names_path and os.path.exists(scr_names_path):
-        with open(scr_names_path, 'r', encoding='utf-8') as f:
-            scr_names = [line.rstrip('\n') for line in f.readlines()]
+        if scr_names_path.endswith('.nam'):
+            scr_names = []
+            with open(scr_names_path, 'rb') as f:
+                nam_data = f.read()
+            for i in range(len(nam_data)//0x20):
+                name_bytes = nam_data[(i*0x20): (i*0x20+0x20)].replace(b'\x00', b'')
+                name_bytes = name_bytes[:-2].replace(b'\x01', b'')
+                if name_bytes==b"":
+                    assert i+1==(len(nam_data)//0x20),"Error! Have empty name in it."
+                    continue
+                file_name = name_bytes.decode('cp932')
+                scr_names.append(file_name)
+        else:
+            with open(scr_names_path, 'r', encoding='utf-8') as f:
+                scr_names = [line.rstrip('\n') for line in f.readlines()]
         assert entries_num==len(scr_names), "Usually won't happend this error, please check."
     else:
         scr_names = [f'{index}' for index in range(1,entries_num+1)]
