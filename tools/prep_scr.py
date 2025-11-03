@@ -43,7 +43,7 @@ def decode_scr_bin(args):
         parent_path = Path(args.output_parent)
         assert parent_path.exists() and parent_path.is_dir(), "output_parent path must be a folder."
     else:
-        parent_path = (input_path.parent if input_path.is_file() else input_path).parent
+        parent_path = input_path.parent
     decode_text_path = parent_path.joinpath("decoded_text")
     decode_scr_path = parent_path.joinpath("decoded_script")
 
@@ -163,7 +163,7 @@ def import_csv_to_scr(args):
     if args.output:
         output_path = Path(args.output)
     else:
-        output_path = (input_path.parent if input_path.is_file() else input_path).parent
+        output_path = input_path.parent
         output_path = output_path.joinpath("translated_script")
     output_path.mkdir(parents=True, exist_ok=True)
     output_path.joinpath('scr_adr').mkdir(parents=True, exist_ok=True)
@@ -207,7 +207,7 @@ def encode_txt_to_scr(args):
     if args.output:
         output_path = Path(args.output)
     else:
-        output_path = (input_path.parent if input_path.is_file() else input_path).parent
+        output_path = input_path.parent
         output_path = output_path.joinpath("encoded_script")
     output_path.mkdir(parents=True, exist_ok=True)
     output_path.joinpath('scr_adr').mkdir(parents=True, exist_ok=True)
