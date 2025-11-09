@@ -64,7 +64,6 @@ def get_nam_pattern(nam_file_name):
 def extract_filenames(nam_filename, nam_data, fix=False):
     namelist = []
     if nam_data[:0x7] == b'MRG.NAM':
-        # TODO: haven't test this part yet
         names_count, = struct.unpack('<I', nam_data[0x10:0x14])
         nam_index = {}
         for i in range(names_count):
@@ -75,7 +74,7 @@ def extract_filenames(nam_filename, nam_data, fix=False):
             length = next_offset - start_offset - 4
             in_count, = struct.unpack("<I", nam_data[start_offset: (start_offset+4)])
             if in_count != i:
-                raise Exception(f"[DEBUG]Error: can't get name from index {i}, the in-header index is {in_count}")
+                raise Exception(f"Error: can't get name from index {i}, the in-header index is {in_count}")
             name_bytes = nam_data[(start_offset+4): (start_offset+4+length)]
             if name_bytes.find(b'\x00')>=0:
                 name_bytes = name_bytes[:name_bytes.index(b'\x00')]
@@ -139,7 +138,7 @@ def unpack(args):
         hed_file = open(hed_path, 'rb')
         _low, first_entry_high = struct.unpack('<HH', hed_file.read(0x04))
         entry_length = 8 if (first_entry_high & 0x0FFF)==0 else 4
-        entries_num = hed_path.stat().st_size // entry_length
+        entries_num = hed_path.stat().st_size // entry_length - 2  # last 2 'entry' is usually 0xFF padding
         # if mrg with hed file, it will not contain its magic and entry-num header
         file_data_start_offset = 0
         hed_file.seek(0)
