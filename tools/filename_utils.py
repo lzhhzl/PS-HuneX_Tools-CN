@@ -30,6 +30,9 @@ def add_suffix(name, data, output_path=None, collision_suffix=None):
                 name += '.at3'
             else:
                 name += '.atrac_bin'
+        # ABMP
+        elif data[:4] == b"\x41\x42\x4D\x50":
+            name += '.abmp'
         else:
             name += '.bin'
     assert ' ' not in name

@@ -25,7 +25,7 @@ text_command = {
     "_LVSV": r'_LVSV\((.*)\)\)',
     "_STTI":"",  # TODO: wait to add
     "_MSAD": r'_MSAD\((.*)$',
-    r"_ZM[0-9a-f]{5}": r'_ZM[0-9a-f]{5}\(([^)]*)(?:\)|$)',
+    r"_ZM[0-9a-f]+": r'_ZM[0-9a-f]+\(([^)]*)(?:\)|$)',
     r"SEL[R]": r'_SELR\([^;]*;/([^)]*)\)\)',
     r"_MSA\d": r"_MSA\d\((.*)$",
     "_RTTH": r'_RTTH\([^,]*,([^)]*)\)\)',
@@ -133,7 +133,7 @@ def load_translations(csv_reader, char_map_code_dict, encode_lang='jp'):
 
 def get_scr_tag(raw_buf: bytes):
     content = raw_buf.decode('cp932')
-    matchs = re.search(r"_ZZ([0-9a-f]{5})\(([^)]*)(?:\)|$)",content)
+    matchs = re.search(r"_ZZ([0-9a-f]+)\(([^)]*)(?:\)|$)",content)
     return matchs.group(1)[:3], matchs.group(2).rstrip('/')
 
 

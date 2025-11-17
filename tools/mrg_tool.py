@@ -49,15 +49,21 @@ class CustHelpAction(argparse._HelpAction):  # show subcommand help
         parser.exit()
 
 
-def get_nam_pattern(nam_file_name):
+def split_nam_data(nam_data, nam_file_name):
     if nam_file_name.find('voice') >= 0:
         if MODE == 'fateSN':
             # Fate Stay Night Realta Nua
-            return 0x8
+            nam_length = 0x8
         elif MODE == 'aiyokuEus':
             # Aiyoku no Eustia
-            return 0x10
-    return 0x20
+            nam_length = 0x10
+        else:
+            raise Exception('Unknown nam-length pattern mode for voice pac')
+        names_count = len(nam_data) // nam_length
+        nam_bufs = [nam_data[(i*nam_length): (i*nam_length+nam_length)] for i in range(names_count)]
+    else:
+        nam_bufs = nam_data.split(b'\x0A')
+    return nam_bufs
 
 
 # Author: root-none, rewrite base hedutil.NamUtil
@@ -81,16 +87,17 @@ def extract_filenames(nam_filename, nam_data, fix=False):
             file_name = name_bytes.decode('cp932')
             namelist.append(file_name)
     else:
-        nam_length = get_nam_pattern(nam_filename)
-        names_count = len(nam_data) // nam_length
-        for i in range(names_count):
+        nam_bufs_list = split_nam_data(nam_data, nam_filename)
+        for i,name_bytes in enumerate(nam_bufs_list):
             file_name = filename_utils.fix_file_name(i, MODE) if fix else ""
-            name_bytes = nam_data[(i*nam_length): (i*nam_length+nam_length)]
-            name_bytes = name_bytes.replace(b'\x01', b'')
+            name_bytes = name_bytes.rstrip(b'\x0d').replace(b'\x01', b'')
             if name_bytes.find(b'\x00')>=0:
+                tail_part = name_bytes[name_bytes.index(b'\x00'):].replace(b'\x00',b'')
                 name_bytes = name_bytes[:name_bytes.index(b'\x00')]
+                if tail_part:
+                    name_bytes += (b"#"+tail_part)
             if name_bytes==b"":
-                if i+1!=names_count:
+                if i+1!=len(nam_bufs_list):
                     print(f"Debug: have empty name bytes(index:{i}) in nam file")
                 continue  # last one might be padding
             try:

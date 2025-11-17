@@ -22,7 +22,7 @@ import filename_utils
 
 def decompress(args):
     input_path = Path(args.input)
-    xor_flag = args.is_xor if args.is_xor is not None else 1
+    xor_flag = args.is_xor
     folder_path = filename_utils.file_or_folder(input_path, '*.[Mm][Zz][Xx]')
     output_path = None
 
@@ -59,7 +59,7 @@ def decompress(args):
 
 def compress(args):
     input_path = Path(args.input)
-    xor_flag = args.is_xor if args.is_xor is not None else 1
+    xor_flag = args.is_xor
     folder_path = filename_utils.file_or_folder(input_path, '*')
     output_path = None
 
@@ -92,7 +92,7 @@ def parse_args():
 
     # decompress
     parser_decompress = subparsers.add_parser('decompress', help='decompress mzx with/without xor')
-    parser_decompress.add_argument('-x', '--xor',
+    parser_decompress.add_argument('-x', '--xor', required=True,
                                    dest='is_xor', type=int,
                                    help='Decompress with(1) or without(0) xorff')
     parser_decompress.add_argument('-e', '--ext',
@@ -102,7 +102,7 @@ def parse_args():
 
     # compress
     parser_compress = subparsers.add_parser('compress', help='compress file with/without xor')
-    parser_compress.add_argument('-x', '--xor',
+    parser_compress.add_argument('-x', '--xor', required=True,
                                  dest='is_xor', type=int,
                                  help='Compress with(1) or without(0) xorff')
     parser_compress.add_argument('input', metavar='input_path', help='Input file or folder.')
